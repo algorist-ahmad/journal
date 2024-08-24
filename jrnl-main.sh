@@ -248,7 +248,9 @@ push_to_remote() {
 show_today_jrnl() {
     warn "Today's entries:"
     view_journal_today
+    warn "To read journal on specific date, do jrnl -d DATE"
     warn "To start writing, do jrnl -w"
+    warn "add more here..."
     exit 0
 }
 
