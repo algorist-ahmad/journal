@@ -5,6 +5,9 @@
 HOME_DIR=''  # this script's parent directory
 LOG=''       # where stderr go defined in .env
 JRNL=''      # the true jrnl command wrapped by this one defined in .env
+
+log() { echo "$@" >> "$LOG"; };
+
 function main() {
 
     verify_program_integrity # should be called verify dependencies
@@ -14,16 +17,29 @@ function main() {
     
     # CATCH-ALL
     $JRNL $@
+
+    if [[ $printenv == 1 ]]; then
+        echo "HOME_DIR=$HOME_DIR"
+        echo "LOG=$LOG"
+        echo "JRNL=$JRNL"
+    fi
 }
 
 # TODO: route to programs instead and also move data to private and this code to public
 route_args() {
+
+    log "jrnl-main: ARGS = $@"
+
     case "$1" in
         '') show_today_jrnl ;; # no args provided
         -\?) print_info ;; # such as context, number of todos, consumed status, etc...
         '.' ) view_journal_today "$@" ;;
         '..') view_journal_yesterday "$@" ;;
-        write  | -w) shift; jrnl_write "$@" ;;
+        --printenv ) shift; printenv=1 ;;
+        # RECENTLY ADDED
+        --write | -w) shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
+        --date  | -d) shift; view_journal_on_date "$@" ;;
+        # END OF RECENTLY ADDED
         help   | -h) shift; print_help ;;
         debug  | -D) shift; debug_code "$@" ;;
         git    | -g) shift; execute_git "$@" ;;
@@ -38,15 +54,15 @@ route_args() {
     case "$1" in
         tags | -T) shift; execute_true_jrnl --tags ;;
         todo | -t) shift; execute_true_jrnl "@TODO" "$@" ;;
-        del* | -d) shift; execute_true_jrnl --delete -n "$1" ;;
+        del*) shift; execute_true_jrnl --delete -n "$1" ;;
         edit | -e) shift; execute_true_jrnl -on today --edit ;;
         undo | -z) shift; execute_true_jrnl --delete -1 ;;
     esac
 }
 
 verify_program_integrity() {
-    HOME_DIR="$(dirname "$(readlink -f "$0")")"
-    env="$HOME_DIR/.env"
+    export HOME_DIR="$(dirname "$(readlink -f "$0")")"
+    export env="$HOME_DIR/.env"
     # env not exist
     if [[ ! -f "$env" ]]; then echo "NO $env FOUND. Create one in $HOME_DIR"; exit 1; fi
 }
@@ -60,7 +76,7 @@ source_env() {
     # does LOG exists?
     if [[ ! -f "$LOG" ]]; then
         echo "LOG DOES NOT EXIST IN $tmp/.env. Will send output to $tmp/jrnl.log instead."
-        LOG="$tmp/jrnl.log"
+        export LOG="$tmp/jrnl.log"
     fi
 }
 
@@ -70,8 +86,8 @@ prepare_true_command() {
     if [[ ! -n "$DEFAULT_JOURNAL"  ]]; then echo "NO DEFAULT JOURNAL DEFINED IN .env"; fi
 
     journal=$(get_journal)
-    JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
-    echo "$JRNL" >> "$LOG"
+    export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
+    log "$JRNL"
 }
 
 config_jrnl() {
@@ -184,13 +200,6 @@ get_journal() {
     esac
 }
 
-new_entry_with_no_editor() {
-    context selected
-    journal=$(get_journal)
-    $JRNL --config-override editor ""
-    exit "$?"
-}
-
 print_info() {
     context selected
     context list
@@ -243,6 +252,14 @@ show_today_jrnl() {
     exit 0
 }
 
+get_pager() {
+    if [ -f '/bin/bat' ]; then
+        echo 'bat -p'
+    else
+        echo 'less -R'
+    fi
+}
+
 # exit function
 view_entries_in_terminal() {
     context selected
@@ -263,12 +280,15 @@ view_journal_today() {
     echo "$JRNL -on today" >> "$LOG"
 }
 
-get_pager() {
-    if [ -f '/bin/bat' ]; then
-        echo 'bat -p'
-    else
-        echo 'less -R'
-    fi
+view_journal_on_date() {
+    J=$(get_journal)
+    warn "Journal: $J"
+    date_args="$*"
+    date=$(date -d "$date_args" +"%Y-%m-%d")
+    if [ -z "$date" ]; then exit 9; fi
+    echo "$JRNL -on $date"
+    $JRNL -on $date ; x="$?"
+    exit "$x"
 }
 
 view_journal_yesterday() {
