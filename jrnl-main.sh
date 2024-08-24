@@ -286,7 +286,7 @@ view_journal_on_date() {
     date_args="$*"
     date=$(date -d "$date_args" +"%Y-%m-%d")
     if [ -z "$date" ]; then exit 9; fi
-    echo "$JRNL -on $date"
+    log "$JRNL -on $date"
     $JRNL -on $date ; x="$?"
     exit "$x"
 }
