@@ -30,7 +30,7 @@ new_entry_with_no_editor() {
     # get journal
     journal=$JOURNAL
     # execute command
-    $JRNL --config-override editor ""
+    $JRNL --config-override editor ''
     exit "$?"
 }
 
