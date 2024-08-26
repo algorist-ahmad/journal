@@ -14,7 +14,10 @@ function main() {
     source_env
     prepare_true_command
     route_args "$@"
-    
+
+    # FIXME: shitty fix for creating an alias for --template, but in a hurry so will do for now
+    if [[ "$1" == '-T' ]]; then set -- '--template' "${@:2}"; fi
+
     # CATCH-ALL
     $JRNL $@
 
@@ -39,6 +42,7 @@ route_args() {
         # RECENTLY ADDED
         --write | -w) shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
         --date  | -d) shift; view_journal_on_date "$@" ;;
+        --template | -T) generate_uuid "$@" ;;
         # END OF RECENTLY ADDED
         help   | -h) shift; print_help ;;
         debug  | -D) shift; debug_code "$@" ;;
@@ -52,8 +56,6 @@ route_args() {
     
     # SHORTCUTS
     case "$1" in
-        tags | -T) shift; execute_true_jrnl --tags ;;
-        todo | -t) shift; execute_true_jrnl "@TODO" "$@" ;;
         del*) shift; execute_true_jrnl --delete -n "$1" ;;
         edit | -e) shift; execute_true_jrnl -on today --edit ;;
         undo | -z) shift; execute_true_jrnl --delete -1 ;;
@@ -182,6 +184,13 @@ jrnl_write() {
     exit "$?"
 }
 
+generate_uuid() {
+    uuid=$(uuidgen)
+    # Using ANSI escape codes to style the output
+    echo -e "entry id: \033[1;37;41m$uuid\033[0m (must include manually!)"
+
+}
+
 get_context() {
     if [[ ! -f "$CONTEXT" ]]; then
         echo "none" > "$CONTEXT"
@@ -249,8 +258,8 @@ show_today_jrnl() {
     warn "Today's entries:"
     view_journal_today
     warn "To read journal on specific date, do jrnl -d DATE"
-    warn "To start writing, do jrnl -w DATE: TITLE. BODY (optional args)"
-    warn "add more here..."
+    warn "To start writing, do jrnl -w"
+    warn "Use one of the available templates in $DATA_SOURCE/templates!"
     exit 0
 }
 
