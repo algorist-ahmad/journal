@@ -48,7 +48,7 @@ route_args() {
         --date  | -d) 
             shift; view_journal_on_date "$@" ;;
         --template | -T) 
-            shift; load_template "$2" ;;
+            load_template "$2" ;;
         help   | -h) 
             shift; print_help ;;
         debug  | -D) 
