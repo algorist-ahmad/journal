@@ -15,12 +15,6 @@ function main() {
     prepare_true_command
     route_args "$@"
 
-    # FIXME: shitty fix for creating an alias for --template, but in a hurry so will do for now
-    if [[ "$1" == '-T' ]]; then set -- '--template' "${@:2}"; fi
-
-    # CATCH-ALL
-    $JRNL $@
-
     if [[ $printenv == 1 ]]; then
         echo "HOME_DIR=$HOME_DIR"
         echo "LOG=$LOG"
@@ -33,32 +27,57 @@ route_args() {
 
     log "jrnl-main: ARGS = $@"
 
+    # Put non-terminating case first
+    # --printenv ) 
+    #         shift; printenv=1 ;;
+
+    # terminating cases
     case "$1" in
-        '') show_today_jrnl ;; # no args provided
-        -\?) print_info ;; # such as context, number of todos, consumed status, etc...
-        '.' ) view_journal_today "$@" ;;
-        '..') view_journal_yesterday "$@" ;;
-        --printenv ) shift; printenv=1 ;;
-        # RECENTLY ADDED
-        --write | -w) shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
-        --date  | -d) shift; view_journal_on_date "$@" ;;
-        --template | -T) load_template "$2" ;;
-        # END OF RECENTLY ADDED
-        help   | -h) shift; print_help ;;
-        debug  | -D) shift; debug_code "$@" ;;
-        git    | -g) shift; execute_git "$@" ;;
-        conf*  | -C) shift; config_jrnl "$@" ;;
-        cont*  | -c) shift; context "$@" ; exit "$?";;
-        update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
-        push   | -p) shift; push_to_remote ;;
-        view   | ?d) view_entries_in_terminal "$@" ;;
-    esac
-    
-    # SHORTCUTS
-    case "$1" in
+        # NO ARGUMENT
+
+        '') show_today_jrnl ;;
+
+        # SPECIAL COMMANDS
+
+        -\?) 
+            print_info ;; # such as context, number of todos, consumed status, etc...
+        '..') 
+            view_journal_yesterday "$@" ;;
+        --write | -w) 
+            shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
+        --date  | -d) 
+            shift; view_journal_on_date "$@" ;;
+        --template | -T) 
+            shift; load_template "$2" ;;
+        help   | -h) 
+            shift; print_help ;;
+        debug  | -D) 
+            shift; debug_code "$@" ;;
+        git    | -g) 
+            shift; execute_git "$@" ;;
+        conf*  | -C) 
+            shift; config_jrnl "$@" ;;
+        cont*  | -c) 
+            shift; context "$@" ; exit "$?";;
+        update | -u) 
+            shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+        push   | -p) 
+            shift; push_to_remote ;;
+        view   | ?d) 
+            view_entries_in_terminal "$@" ;;
+
+        # SHORTCUTS
+
         del*) shift; execute_true_jrnl --delete -n "$1" ;;
         edit | -e) shift; execute_true_jrnl -on today --edit ;;
         undo | -z) shift; execute_true_jrnl --delete -1 ;;
+
+        # Cases where $1 begins with '-', pass directly to jrnl without processing
+        -*) $JRNL $@ ;;
+
+        # If no case matched above, then treat it as a filter by default
+        *) filter_journal "$@"
+
     esac
 }
 
@@ -173,6 +192,21 @@ execute_true_jrnl() {
         # echo "Exiting..."
         # # Do nothing, just exit
     # fi
+}
+
+filter_journal() {
+    # Capture the output of the journal command
+    search_result=$($JRNL -contains "$@")
+
+    if [[ -z $search_result ]]; then exit 0; fi
+
+    # $JRNL -contains "$@" | grep --color=always -E "$@|$" | less -R
+
+      # Capture the output of the journal command
+    output=$($JRNL -contains "$@" 2> /dev/null | grep --color=always -E "$@|$")
+
+    # Use `grep` to check if the output is "no entries found" and handle accordingly
+    echo "$output" | less -R
 }
 
 # sub-command, PUT IN ITS OWN SCRIPT TODO:
