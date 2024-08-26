@@ -13,13 +13,13 @@ function main() {
     case "$1" in
         '') new_entry_with_no_editor ;;
         -d | --date) echo "No editor won't work with date." ; exit 1 ;; # export date="$(date --date="$2" +"%Y-%m-%d"):" ; log "date is $date" ; shift 2; main "$@" ;; # no args provided
-        *) echo "jrnl-write: I don't know what to do with $@ yet" ;;
+        *) confirm_write "$@" ;;
     esac
     
-    # COMMAND
-    ## jrnl $selected_journal --config-file $CONFIG_FILE_PATH optional_date: var_args"
-    log "EXECUTED: $JRNL $date $@"
-    $JRNL $date $@
+    # # COMMAND
+    # ## jrnl $selected_journal --config-file $CONFIG_FILE_PATH optional_date: var_args"
+    # log "EXECUTED: $JRNL $date $@"
+    # $JRNL $date $@
 }
 
 new_entry_with_no_editor() {
@@ -45,5 +45,31 @@ get_journal() {
         *) warn "unverified journal, see get_journal()" ; echo $context ;;
     esac
 }
+
+confirm_write() {
+    OK=$(get_confirmation "$*")
+    if [[ $OK -gt 0 ]]; then
+        $JRNL $@
+        exit 0
+    else
+        err Not written.
+        exit 0
+    fi
+}
+
+get_confirmation() {
+    read -p "Write
+    \"$1\"
+to journal $(get_journal)? > " -n 1 -r
+    >&2 echo   # new line
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo 1
+        exit 0
+    fi
+    echo 0
+}
+
+err()  { echo -e "\e[31m$@\e[0m" >&2; }
 
 main "$@"
