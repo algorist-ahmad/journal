@@ -42,7 +42,7 @@ route_args() {
         # RECENTLY ADDED
         --write | -w) shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
         --date  | -d) shift; view_journal_on_date "$@" ;;
-        --template | -T) generate_uuid "$@" ;;
+        --template | -T) load_template "$2" ;;
         # END OF RECENTLY ADDED
         help   | -h) shift; print_help ;;
         debug  | -D) shift; debug_code "$@" ;;
@@ -188,7 +188,17 @@ generate_uuid() {
     uuid=$(uuidgen)
     # Using ANSI escape codes to style the output
     echo -e "entry id: \033[1;37;41m$uuid\033[0m (must include manually!)"
+}
 
+load_template() {
+    if [[ -z "$TEMPLATES" ]]; then err "\$TEMPLATES is NOT defined in $HOME_DIR/.env!"; exit 88; fi;
+    template_file="$TEMPLATES/$1"
+    echo $template_file
+    if [[ -d "$template_file" ]]; then err "$template_file is a directory"; exit 89; fi
+    if [[ ! -f "$template_file" ]]; then err "$template_file DOES NOT EXIST"; exit 90; fi
+    generate_uuid
+    $JRNL --template "$template_file"
+    exit "$?"
 }
 
 get_context() {
