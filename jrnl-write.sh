@@ -23,7 +23,13 @@ function main() {
 }
 
 new_entry_with_no_editor() {
+    # generate uuid to establish reference between entry and real world objects
+    uuid=$(uuidgen)
+    # Using ANSI escape codes to style the output
+    echo -e "entry id: \033[1;37;41m$uuid\033[0m (must include manually!)"
+    # get journal
     journal=$JOURNAL
+    # execute command
     $JRNL --config-override editor ""
     exit "$?"
 }
