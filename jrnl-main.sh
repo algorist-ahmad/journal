@@ -72,8 +72,8 @@ route_args() {
         edit | -e) shift; execute_true_jrnl -on today --edit ;;
         undo | -z) shift; execute_true_jrnl --delete -1 ;;
 
-        # Cases where $1 begins with '-', pass directly to jrnl without processing
-        -*) $JRNL $@ ;;
+        # Cases where $1 begins with '-' or '@', pass directly to jrnl without processing
+        -* | @*) $JRNL $@ ;;
 
         # If no case matched above, then treat it as a filter by default
         *) filter_journal "$@"
@@ -132,9 +132,7 @@ context() {
     if [[ -n $print_selected_journal ]]; then
         case "$context_value" in
             none)  warn "Main journal selected." ;;
-            acad*) warn "Academic journal selected." ;;
             work)  warn "Work journal selected." ;;
-            flex*) warn "CST8319 project journal selected." ;;
             *)     err  "No journal named $context_value exists." ; warn "this could be a bug check function `context`" ; exit 1 ;;
         esac
     fi
