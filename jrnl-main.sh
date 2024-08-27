@@ -216,8 +216,9 @@ jrnl_write() {
     exit "$?"
 }
 
+# generate short form uuid
 generate_uuid() {
-    uuid=$(uuidgen)
+    uuid=$(uuidgen | head -c 8)
     # Using ANSI escape codes to style the output
     echo -e "entry id: \033[1;37;41m$uuid\033[0m (must include manually!)"
 }
