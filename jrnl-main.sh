@@ -41,16 +41,18 @@ route_args() {
 
         -\?) 
             print_info ;; # such as context, number of todos, consumed status, etc...
-        '..') 
-            view_journal_yesterday "$@" ;;
-        --write | -w) 
-            shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
-        --date  | -d) 
+        --amend | -a | amend)
+            shift; edit_today_journal;;
+        --date  | -d | dat*) 
             shift; view_journal_on_date "$@" ;;
-        --template | -T) 
+        --template | -T | temp*) 
             load_template "$2" ;;
-        help   | -h) 
-            shift; print_help ;;
+        --todo | -t)
+            edit_today_todo "$@" ;;
+        --undo | -u | und*)
+            shift; execute_true_jrnl --delete -1 ;;
+        --write | -w | wri*) 
+            shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
         debug  | -D) 
             shift; debug_code "$@" ;;
         git    | -g) 
@@ -59,18 +61,12 @@ route_args() {
             shift; config_jrnl "$@" ;;
         cont*  | -c) 
             shift; context "$@" ; exit "$?";;
-        update | -u) 
-            shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
         push   | -p) 
             shift; push_to_remote ;;
         view   | ?d) 
             view_entries_in_terminal "$@" ;;
-
-        # SHORTCUTS
-
-        del*) shift; execute_true_jrnl --delete -n "$1" ;;
-        edit | -e) shift; execute_true_jrnl -on today --edit ;;
-        undo | -z) shift; execute_true_jrnl --delete -1 ;;
+        yest*)
+            view_journal_yesterday "$@" ;;
 
         # Cases where $1 begins with '-' or '@', pass directly to jrnl without processing
         -* | @*) $JRNL $@ ;;
@@ -159,6 +155,15 @@ debug_code() {
     fi
     "$editor" "$0"
     exit "$?"
+}
+
+edit_today_journal() {
+    $JRNL -on today --edit
+    exit "$?"
+}
+
+edit_today_todo() {
+    $JRNL -on today -contains 'TODO' $2
 }
 
 execute_git() {
