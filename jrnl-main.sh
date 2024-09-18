@@ -4,6 +4,7 @@
 
 HOME_DIR=''  # this script's parent directory
 LOG=''       # where stderr go defined in .env
+CACHE=''     # where cached data is stored
 JRNL=''      # the true jrnl command wrapped by this one defined in .env
 
 log() { echo "$@" >> "$LOG"; };
@@ -18,6 +19,7 @@ function main() {
     if [[ $printenv == 1 ]]; then
         echo "HOME_DIR=$HOME_DIR"
         echo "LOG=$LOG"
+        echo "CACHE=$CACHE"
         echo "JRNL=$JRNL"
     fi
 }
@@ -92,7 +94,7 @@ source_env() {
     if [[ "$HOME_DIR" != "$tmp" ]]; then echo "Warning: HOME_DIR [$HOME_DIR] not matching actual parent ($tmp)"; fi
     # does LOG exists?
     if [[ ! -f "$LOG" ]]; then
-        echo "LOG DOES NOT EXIST IN $tmp/.env. Will send output to $tmp/jrnl.log instead."
+        echo "$LOG DOES NOT EXIST IN $tmp/.env. Will send output to $tmp/jrnl.log instead."
         export LOG="$tmp/jrnl.log"
     fi
 }
@@ -241,6 +243,8 @@ load_template() {
 
 get_context() {
     if [[ ! -f "$CONTEXT" ]]; then
+        dirname=$(dirname $CONTEXT)
+        mkdir -pv $dirname
         echo "none" > "$CONTEXT"
         echo "none"
     else

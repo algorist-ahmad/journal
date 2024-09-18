@@ -1,0 +1,9 @@
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml
+jrnl-main: ARGS = 
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml -on today
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml
+jrnl-main: ARGS = 
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml -on today
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml
+jrnl-main: ARGS = 
+/usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml -on today
