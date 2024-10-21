@@ -27,11 +27,11 @@ new_entry_with_default_template() {
     template_file="$TEMPLATES/tmp"
     uuid=$(uuidgen | head -c 8)
     # generate uuid in template
-    echo -e "entry $uuid" > "$template_file"
+    echo -e "entry $uuid\n" > "$template_file"
     # define journal used
     journal=$JOURNAL
     # execute command
-    $JRNL --config-override editor micro --template "$template_file" ; status="$?"
+    $JRNL --config-override editor 'micro +3:1' --template "$template_file" ; status="$?"
     # output new id if insert successful
     [[ $status -eq 0 ]] && echo -e "id: $uuid"
     # clear template
