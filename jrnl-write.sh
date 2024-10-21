@@ -11,7 +11,8 @@ function main() {
     log "jrnl-write: ARGS = $@"
 
     case "$1" in
-        '') new_entry_with_no_editor ;;
+        '') new_entry_with_default_template ;;
+        -n) new_entry_with_no_editor ;;
         -d | --date) echo "No editor won't work with date." ; exit 1 ;; # export date="$(date --date="$2" +"%Y-%m-%d"):" ; log "date is $date" ; shift 2; main "$@" ;; # no args provided
         *) confirm_write "$@" ;;
     esac
@@ -20,6 +21,32 @@ function main() {
     # ## jrnl $selected_journal --config-file $CONFIG_FILE_PATH optional_date: var_args"
     # log "EXECUTED: $JRNL $date $@"
     # $JRNL $date $@
+}
+
+new_entry_with_default_template() {
+    template_file="$TEMPLATES/tmp"
+    uuid=$(uuidgen | head -c 8)
+    # generate uuid in template
+    echo -e "entry $uuid" > "$template_file"
+    # define journal used
+    journal=$JOURNAL
+    # execute command
+    $JRNL --config-override editor micro --template "$template_file" ; status="$?"
+    # output new id if insert successful
+    [[ $status -eq 0 ]] && echo -e "id: $uuid"
+    # clear template
+    echo '[removed]' > "$template_file"
+    # done
+    exit $status
+}
+
+new_entry_with_micro() {
+    generate_uuid
+    # get journal
+    journal=$JOURNAL
+    # execute command
+    $JRNL --config-override editor micro
+    exit "$?"
 }
 
 new_entry_with_no_editor() {
@@ -35,7 +62,7 @@ new_entry_with_no_editor() {
 generate_uuid() {
     uuid=$(uuidgen | head -c 8)
     # Using ANSI escape codes to style the output
-    echo -e "entry id: \033[1;37;41m$uuid\033[0m (must include manually!)"
+    echo -e "entry id: \033[1;37;41m$uuid\033[0m (include manually)"
 }
 
 get_context() {

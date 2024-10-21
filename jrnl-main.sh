@@ -55,6 +55,8 @@ route_args() {
             shift; execute_true_jrnl --delete -1 ;;
         --write | -w | wri*) 
             shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
+        --no-editor | -wn | -nw )
+            shift; "$HOME_DIR/jrnl-write.sh" "-n" ; exit "$?" ;;
         debug  | -D) 
             shift; debug_code "$@" ;;
         git    | -g) 
@@ -311,7 +313,7 @@ show_today_jrnl() {
     view_journal_today
     warn "To read journal on specific date, do jrnl -d DATE"
     warn "To start writing, do jrnl -w"
-    warn "Use one of the available templates in $DATA_SOURCE/templates!"
+    warn "Use one of the available templates in $JRNL_DATA/templates!"
     exit 0
 }
 
