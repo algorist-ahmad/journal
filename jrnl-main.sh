@@ -43,6 +43,8 @@ route_args() {
 
         -\?) 
             print_info ;; # such as context, number of todos, consumed status, etc...
+        --)
+            shift; bypass_wrapper "$@";; # go directly to the true jrnl program
         --amend | -a | amend)
             shift; edit_today_journal;;
         --date  | -d | dat*) 
@@ -109,6 +111,11 @@ prepare_true_command() {
     journal=$(get_journal)
     export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
     log "$JRNL"
+}
+
+bypass_wrapper() {
+    #"$JRNL" "$@"
+    echo "that shit wont work"
 }
 
 config_jrnl() {
