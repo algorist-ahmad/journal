@@ -51,6 +51,7 @@ new_entry_with_micro() {
 
 new_entry_with_no_editor() {
     generate_uuid
+    err "Beware: cannot use jrnl in 2 terminals at once."
     # get journal
     journal=$JOURNAL
     # execute command
