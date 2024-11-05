@@ -9,10 +9,12 @@ date='' # the date to write for
 function main() {
 
     log "jrnl-write: ARGS = $@"
+    abort_write_if_running
 
     case "$1" in
         '') new_entry_with_default_template ;;
         -n) new_entry_with_no_editor ;;
+        -T) new_entry_with_template ;; #TODO:
         -d | --date) echo "No editor won't work with date." ; exit 1 ;; # export date="$(date --date="$2" +"%Y-%m-%d"):" ; log "date is $date" ; shift 2; main "$@" ;; # no args provided
         *) confirm_write "$@" ;;
     esac
@@ -23,6 +25,14 @@ function main() {
     # $JRNL $date $@
 }
 
+abort_write_if_running() {
+    if [[ "$WRITE_MODE" == "on" ]]; then
+        err "jrnl-write is already running!"
+        echo "Either finish editing or write to temporary file to avoid overwriting"
+        exit 5
+    fi
+}
+
 new_entry_with_default_template() {
     template_file="$TEMPLATES/tmp"
     uuid=$(uuidgen | head -c 8)
@@ -30,12 +40,16 @@ new_entry_with_default_template() {
     echo -e "entry $uuid\n" > "$template_file"
     # define journal used
     journal=$JOURNAL
+    # write mode ON
+    echo 'on' > "$WRITE_MODE_INDICATOR_FILE"
     # execute command
     $JRNL --config-override editor 'micro +3:1' --template "$template_file" ; status="$?"
     # output new id if insert successful
     [[ $status -eq 0 ]] && echo -e "id: $uuid"
     # clear template
     echo '[removed]' > "$template_file"
+    # write mode OFF
+    echo 'off' > "$WRITE_MODE_INDICATOR_FILE"
     # done
     exit $status
 }
@@ -45,7 +59,11 @@ new_entry_with_micro() {
     # get journal
     journal=$JOURNAL
     # execute command
+    # write mode ON
+    echo 'on' > "$WRITE_MODE_INDICATOR_FILE"
     $JRNL --config-override editor micro
+    # write mode OFF
+    echo 'off' > "$WRITE_MODE_INDICATOR_FILE"
     exit "$?"
 }
 
@@ -55,7 +73,11 @@ new_entry_with_no_editor() {
     # get journal
     journal=$JOURNAL
     # execute command
+    # write mode ON
+    echo 'on' > "$WRITE_MODE_INDICATOR_FILE"
     $JRNL --config-override editor ''
+    # write mode OFF
+    echo 'off' > "$WRITE_MODE_INDICATOR_FILE"
     exit "$?"
 }
 

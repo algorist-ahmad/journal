@@ -1,27 +1,28 @@
 #!/bin/bash
 
-# global variables
+# default variables, manually add to reveal_variables()
 
-HOME_DIR=''  # this script's parent directory
-LOG=''       # where stderr go defined in .env
-CACHE=''     # where cached data is stored
-JRNL=''      # the true jrnl command wrapped by this one defined in .env
+CACHE="$HOME/.cache" # default cache location where cached data is stored
+DEBUG=0              # reveals environment variables if true
+HOME_DIR=''          # this script's parent directory
+INPUT_ARGS="$@"      # arguments received by main script
+PARSED_ARGS=''       # arguments parsed
+LOG=''               # where stderr go defined in .env
+JRNL=''              # the true jrnl command wrapped by this one defined in .env
+OK=1                 # if everything is OK, continue execution of arguments
+WRITE_MODE='off'
+WRITE_MODE_INDICATOR_FILE="$CACHE/jrnl/write.mode.bool"
 
 log() { echo "$@" >> "$LOG"; };
 
 function main() {
-
-    verify_program_integrity # should be called verify dependencies
+    verify_program_integrity # makes sure .env is present among other things
     source_env
     prepare_true_command
-    route_args "$@"
-
-    if [[ $printenv == 1 ]]; then
-        echo "HOME_DIR=$HOME_DIR"
-        echo "LOG=$LOG"
-        echo "CACHE=$CACHE"
-        echo "JRNL=$JRNL"
-    fi
+    check_write_mode
+    parse_args
+    [[ "$1" == "debug" ]] && shift && reveal_variables 
+    [[ $OK -eq 1 ]] && route_args "$@"
 }
 
 # TODO: route to programs instead and also move data to private and this code to public
@@ -59,7 +60,7 @@ route_args() {
             shift; "$HOME_DIR/jrnl-write.sh" "$@" ; exit "$?" ;;
         --no-editor | -wn | -nw )
             shift; "$HOME_DIR/jrnl-write.sh" "-n" ; exit "$?" ;;
-        debug  | -D) 
+        src  | -D) 
             shift; debug_code "$@" ;;
         git    | -g) 
             shift; execute_git "$@" ;;
@@ -103,6 +104,10 @@ source_env() {
     fi
 }
 
+parse_args() {
+    PARSED_ARGS="we don't do this shit here"
+}
+
 prepare_true_command() {
     if [[ ! -f "$TRUE_JRNL" ]]; then echo "$TRUE_JRNL DOES NOT EXIST."; exit 1; fi
     if [[ ! -f "$CONFIG_FILE_PATH" ]]; then echo "CONFIG FILE $CONFIG_FILE_PATH DOES NOT EXIST. Create or update in .env"; exit 2; fi
@@ -116,6 +121,14 @@ prepare_true_command() {
 bypass_wrapper() {
     #"$JRNL" "$@"
     echo "that shit wont work"
+}
+
+check_write_mode() {
+    # if running, abort, if not, mark as rnning
+    touch "$WRITE_MODE_INDICATOR_FILE"
+    WRITE_MODE=$(<$WRITE_MODE_INDICATOR_FILE)
+    export WRITE_MODE
+    export WRITE_MODE_INDICATOR_FILE
 }
 
 config_jrnl() {
@@ -246,7 +259,11 @@ load_template() {
     if [[ -d "$template_file" ]]; then err "$template_file is a directory"; exit 89; fi
     if [[ ! -f "$template_file" ]]; then err "$template_file DOES NOT EXIST"; exit 90; fi
     generate_uuid
+    # write mode ON
+    echo 'on' > "$WRITE_MODE_INDICATOR_FILE"
     $JRNL --template "$template_file"
+    # write mode OFF
+    echo 'off' > "$WRITE_MODE_INDICATOR_FILE"
     exit "$?"
 }
 
@@ -313,6 +330,28 @@ push_to_remote() {
     git -C $DOMAIN commit -m "updating from $HOSTNAME"
     git -C $DOMAIN push
     exit "$?"
+}
+
+reveal_variables() {
+    echo "DEBUG=True"
+    echo "For real debug, do jrnl --debug"
+    echo ""
+    echo "WRITE_MODE=$WRITE_MODE"
+    echo "WRITE_MODE_INDICATOR_FILE=$WRITE_MODE_INDICATOR_FILE"
+    echo "TRUE_JRNL=$TRUE_JRNL"
+    echo "JRNL_DATA=$JRNL_DATA"
+    echo "TEMPLATES=$TEMPLATES"
+    echo "CONFIG_FILE_PATH=$CONFIG_FILE_PATH"
+    echo "CONTEXT=$CONTEXT"
+    echo "DEFAULT_JOURNAL=$DEFAULT_JOURNAL"
+    echo "SECONDARY_EDITOR=$SECONDARY_EDITOR"
+    echo "CACHE=$CACHE"
+    echo "HOME_DIR=$HOME_DIR"
+    echo "INPUT_ARGS=$INPUT_ARGS"
+    echo "PARSED_ARGS=$PARSED_ARGS"
+    echo "LOG=$LOG"
+    echo "JRNL=$JRNL"
+    echo "OK=$OK"
 }
 
 show_today_jrnl() {
