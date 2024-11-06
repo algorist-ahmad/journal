@@ -4,6 +4,8 @@
 
 CACHE="$HOME/.cache" # default cache location where cached data is stored
 DEBUG=0              # reveals environment variables if true
+EDIT=0
+DELETE=0
 HOME_DIR=''          # this script's parent directory
 INPUT_ARGS="$@"      # arguments received by main script
 PARSED_ARGS=''       # arguments parsed
@@ -20,7 +22,7 @@ function main() {
     source_env
     prepare_true_command
     check_write_mode
-    parse_args
+    # parse_args $INPUT_ARGS
     [[ "$1" == "debug" ]] && shift && reveal_variables 
     [[ $OK -eq 1 ]] && route_args "$@"
 }
@@ -105,7 +107,56 @@ source_env() {
 }
 
 parse_args() {
-    PARSED_ARGS="we don't do this shit here"
+    EDIT=0
+    DELETE=0
+    ON=0
+    FUCK=0
+    SHIT=0
+    last_opt=''
+
+    for arg in $@; do
+        echo "$arg"
+        sleep 0.1
+    done
+
+    # Iterate over arguments using a while loop
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --edit)
+                export EDIT=1
+                last_opt='--edit'
+                shift  # Move to next argument
+                ;;
+            delete)
+                export DELETE=1
+                last_opt='delete'
+                shift
+                ;;
+            on)
+                export ON=1
+                shift
+                ;;
+            fuck)
+                export FUCK=1
+                shift
+                ;;
+            shit)
+                export SHIT=1
+                shift
+                ;;
+            *)
+                # Handle unknown argument
+                echo "$last_opt: $1"
+                shift
+                ;;
+        esac
+    done
+
+    echo "EDIT=$EDIT"
+    echo "DELETE=$DELETE"
+    echo "ON=$ON"
+    echo "FUCK=$FUCK"
+    echo "SHIT=$SHIT"
 }
 
 prepare_true_command() {
