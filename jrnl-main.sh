@@ -136,14 +136,6 @@ parse_args() {
                 export ON=1
                 shift
                 ;;
-            fuck)
-                export FUCK=1
-                shift
-                ;;
-            shit)
-                export SHIT=1
-                shift
-                ;;
             *)
                 # Handle unknown argument
                 echo "$last_opt: $1"
@@ -155,8 +147,6 @@ parse_args() {
     echo "EDIT=$EDIT"
     echo "DELETE=$DELETE"
     echo "ON=$ON"
-    echo "FUCK=$FUCK"
-    echo "SHIT=$SHIT"
 }
 
 prepare_true_command() {

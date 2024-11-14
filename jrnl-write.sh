@@ -37,7 +37,7 @@ new_entry_with_default_template() {
     template_file="$TEMPLATES/tmp"
     uuid=$(uuidgen | head -c 8)
     # generate uuid in template
-    echo -e "entry $uuid\n" > "$template_file"
+    echo -e "entry $uuid\n|\n" > "$template_file"
     # define journal used
     journal=$JOURNAL
     # write mode ON
