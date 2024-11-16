@@ -14,6 +14,7 @@ JRNL=''              # the true jrnl command wrapped by this one defined in .env
 OK=1                 # if everything is OK, continue execution of arguments
 WRITE_MODE='off'
 WRITE_MODE_INDICATOR_FILE="$CACHE/jrnl/write.mode.bool"
+AMEND=0
 
 log() { echo "$@" >> "$LOG"; };
 
@@ -49,7 +50,9 @@ route_args() {
         --)
             shift; bypass_wrapper "$@";; # go directly to the true jrnl program
         --amend | -a | amend)
-            shift; edit_today_journal;;
+            export AMEND=1 ;
+            export WRITE_MODE='on' ;
+            shift ; amend ;;
         --date  | -d | dat*) 
             shift; view_journal_on_date "$@" ;;
         --template | -T | temp*) 
@@ -157,6 +160,10 @@ prepare_true_command() {
     journal=$(get_journal)
     export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
     log "$JRNL"
+}
+
+amend() {
+    $JRNL -1 --edit
 }
 
 bypass_wrapper() {
@@ -377,6 +384,7 @@ reveal_variables() {
     echo "DEBUG=True"
     echo "For real debug, do jrnl --debug"
     echo ""
+    echo "AMEND=$AMEND"
     echo "WRITE_MODE=$WRITE_MODE"
     echo "WRITE_MODE_INDICATOR_FILE=$WRITE_MODE_INDICATOR_FILE"
     echo "TRUE_JRNL=$TRUE_JRNL"
