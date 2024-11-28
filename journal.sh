@@ -69,7 +69,7 @@ route_args() {
             shift; debug_code "$@" ;;
         git    | -g) 
             shift; execute_git "$@" ;;
-        conf*  | -C) 
+        config  | -C) 
             shift; config_jrnl "$@" ;;
         cont*  | -c) 
             shift; context "$@" ; exit "$?";;
