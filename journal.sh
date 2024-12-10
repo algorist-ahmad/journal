@@ -404,11 +404,14 @@ reveal_variables() {
 }
 
 show_today_jrnl() {
-    warn "Today's entries:"
+    # warn "Today's entries:"
     view_journal_today
-    warn "To read journal on specific date, do jrnl -d DATE"
-    warn "To start writing, do jrnl -w"
-    warn "Use one of the available templates in $JRNL_DATA/templates!"
+    # warn "To read journal on specific date, do jrnl -d DATE"
+    # warn "To start writing, do jrnl -w"
+    # warn "Use one of the available templates in $JRNL_DATA/templates!"
+    warn "*********"
+    warn "A NEW VERSION IS IN PROGRESS IN BRANCH dev"
+    warn "*********"
     exit 0
 }
 
