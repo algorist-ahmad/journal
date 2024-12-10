@@ -14,7 +14,8 @@ JRNL=''              # the true jrnl command wrapped by this one defined in .env
 OK=1                 # if everything is OK, continue execution of arguments
 WRITE_MODE='off'
 WRITE_MODE_INDICATOR_FILE="$CACHE/jrnl/write.mode.bool"
-AMEND=0
+AMEND=0  # -edit -1
+QUERY=0  # -contains
 
 log() { echo "$@" >> "$LOG"; };
 
@@ -53,6 +54,9 @@ route_args() {
             export AMEND=1 ;
             export WRITE_MODE='on' ;
             shift ; amend ;;
+        --query | -q | q)
+            export QUERY=1 ;
+            shift ; query ;;
         --date  | -d | dat*) 
             shift; view_journal_on_date "$@" ;;
         --template | -T | temp*) 
@@ -112,9 +116,6 @@ source_env() {
 parse_args() {
     EDIT=0
     DELETE=0
-    ON=0
-    FUCK=0
-    SHIT=0
     last_opt=''
 
     for arg in $@; do
@@ -385,6 +386,7 @@ reveal_variables() {
     echo "For real debug, do jrnl --debug"
     echo ""
     echo "AMEND=$AMEND"
+    echo "QUERY=$QUERY"
     echo "WRITE_MODE=$WRITE_MODE"
     echo "WRITE_MODE_INDICATOR_FILE=$WRITE_MODE_INDICATOR_FILE"
     echo "TRUE_JRNL=$TRUE_JRNL"
