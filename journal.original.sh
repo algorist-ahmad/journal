@@ -1,160 +1,34 @@
 #!/bin/bash
 
-declare -A ENV=(
-    [src]=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")") # path to project root
-    [core]="$(which jrnl 2>/dev/null || echo 'NOT FOUND')"
-    [config]="$JRNL_CONFIG" 
-    [data]="${JRNL_DATA:-$HOME/.jrnl}"
-    [log]="${LOGS:-$HOME/.log}"
-    [cache]="${CACHE:-$XDG_CACHE_HOME}/jrnl"
-    [message]='' # post-execution messages and warnings go here
-    # [pwd]=$(pwd)
-    [error]=0
-    [argless]=$([[ $# -eq 0 ]] && echo 1 || echo 0)
-    [notebook]="${JRNL_NOTEBOOK:-main}"
-)
+# default variables, manually add to reveal_variables()
 
-declare -A FILE=(
-    [log]="${ENV[log]}/jrnl.log"
-    [help]="${ENV[src]}/help.txt"
-    [write_mode]="${ENV[cache]}/write.mode.bool"
-)
-
-declare -A ERROR=(
-    [0]='OK'
-    [150]='ERROR 150: '
-)
-
-declare -A ARG=(
-    # CACHE="$HOME/.cache" # now ENV[cache]
-    # DEBUG=0              # now ARG[debug]
-    # EDIT=0               # now ARG[edit]
-    # DELETE=0             # now ARG[delete]
-    # HOME_DIR=''          # now ENV[root]
-    # INPUT_ARGS="$@"      # now ARG[input]
-    # LOG=''               # now ENV[log]
-    # JRNL=''              # now ENV[core]
-    # OK=1                 # now ENV[error] -eq 0
-    # WRITE_MODE='off'     # now ARG[write]
-    # WRITE_MODE_INDICATOR_FILE="$CACHE/jrnl/" # now FILE[write_mode]
-    # AMEND=0              # now ARG[amend]
-    [input]="$@"
-    [unknown]='null'      # unknown args
-    [debug]=0
-    [help]=0
-    [notebook]='null'
-    [query]=1             # query mode is ON by default
-    [write]=0             # WARNING: must be cached to avoid overwrite
-    [edit]=0              # WARNING: set FILE[write_mode] to true
-    [delete]=0
-    [amend]=0             # WARNING: set FILE[write_mode] to true
-    [filter]='null'
-    # [template]='null'                    
-    # [on_date]='null'
-    # [today_in_history]=False
-    # [month]='null'
-    # [day]='null'           
-    # [year]='null'
-    # [start_date]='null'
-    # [end_date]='null'
-    # [strict]=False
-    # [starred]=False                    
-    # [tagged]=False
-    # [limit]='null'
-    # [excluded]=[]
-    # [change_time]='null'
-    # [export]=False
-    # [tags]=False,             
-    # [short]=False
-    # [config_override]=''
-    # [config_file_path]=''              
-    # [text]=''
-    # [exclude_starred]=False
-    # [exclude_tagged]=False
-)
+CACHE="$HOME/.cache" # default cache location where cached data is stored
+DEBUG=0              # reveals environment variables if true
+EDIT=0
+DELETE=0
+HOME_DIR=''          # this script's parent directory
+INPUT_ARGS="$@"      # arguments received by main script
+PARSED_ARGS=''       # arguments parsed
+LOG=''               # where stderr go defined in .env
+JRNL=''              # the true jrnl command wrapped by this one defined in .env
+OK=1                 # if everything is OK, continue execution of arguments
+WRITE_MODE='off'
+WRITE_MODE_INDICATOR_FILE="$CACHE/jrnl/write.mode.bool"
+AMEND=0
 
 log() { echo "$@" >> "$LOG"; };
 
 function main() {
-    initialize   # setup environment and check for missing files
-    parse "$@"   # break input for analysis
-    # validate     # validate the operation
-    # dispatch     # execute the operation
-    # terminate    # execute post-script tasks regardless of operation
-    # # parse_args $INPUT_ARGS
-    # [[ "$1" == "debug" ]] && shift && reveal_variables 
-    # [[ $OK -eq 1 ]] && route_args "$@"
-}
-
-initialize() {
-    check_env_exists
+    verify_program_integrity # makes sure .env is present among other things
     source_env
     prepare_true_command
+    check_write_mode
+    # parse_args $INPUT_ARGS
+    [[ "$1" == "debug" ]] && shift && reveal_variables 
+    [[ $OK -eq 1 ]] && route_args "$@"
 }
 
-parse() {
-
-    local last_option='unknown'
-    
-    # Iterate over arguments using a while loop
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-
-            debug | --debug)
-                ARG[debug]=1 ;
-                ;;
-            help | --help | -h)
-                ARG[help]=1 ;
-                ;;
-            stat)
-                ARG[stat]=1 ;
-                ;;               
-            config)
-                ARG[config]='' ;
-                last_option='config' ;
-                ;;
-            job | -j)
-                ARG[job]='' ;
-                last_option='job' ;
-                ;;
-            cv | resume | -c)
-                ARG[cv]="" ;
-                last_option='cv' ;
-                ;;
-            template* | tmpl | -t)
-                ARG[template]='' ;
-                last_option='template' ;
-                ;;
-            doc | -d)
-                ARG[doc]='' ;
-                last_option='doc' ;
-                ;;
-            --render)
-                # [[ "$last_option" == 'cv' ]]
-                ARG[render]='' ;
-                last_option='render' ;
-                ;;
-            link | -l)
-                ARG[link]='' ;
-                last_option='link' ;
-                ;;
-            null)
-                ENV[message]+='null has special meaning, rejected\n' ;
-                ;;
-            --)
-                last_option='unknown' ; # resets last option
-                ;;
-            *)
-                # if last option is unknown clear ARG[unknown]
-                [[ "$last_option" == 'unknown' ]] && is_null "${ARG[unknown]}" && ARG[unknown]=''
-                # last option specified captures the argument
-                ARG[$last_option]="${ARG[$last_option]} $1" ;
-                ;;
-
-        esac ; shift # discard argument
-    done
-}
-
+# TODO: route to programs instead and also move data to private and this code to public
 route_args() {
 
     log "jrnl-main: ARGS = $@"
@@ -215,7 +89,7 @@ route_args() {
     esac
 }
 
-check_env_exists() {
+verify_program_integrity() {
     export HOME_DIR="$(dirname "$(readlink -f "$0")")"
     export env="$HOME_DIR/.env"
     # env not exist
@@ -279,14 +153,12 @@ parse_args() {
 }
 
 prepare_true_command() {
-    og_jrnl_cmd="${ENV[core]}"
-    notebook="${ENV[notebook]}"
-    config="${ENV[config]}"
+    if [[ ! -f "$TRUE_JRNL" ]]; then echo "$TRUE_JRNL DOES NOT EXIST."; exit 1; fi
+    if [[ ! -f "$CONFIG_FILE_PATH" ]]; then echo "CONFIG FILE $CONFIG_FILE_PATH DOES NOT EXIST. Create or update in .env"; exit 2; fi
+    if [[ ! -n "$DEFAULT_JOURNAL"  ]]; then echo "NO DEFAULT JOURNAL DEFINED IN .env"; fi
 
-    if [[ $og_jrnl_cmd == "NOT FOUND" ]]; then echo "Command jrnl is NOT FOUND. Make sure \$(which jrnl) returns the path to the original command."; exit 1; fi
-    if [[ ! -f "$config" ]]; then echo "CONFIG FILE $config DOES NOT EXIST." ; exit 2; fi
-
-    export JRNL="$og_jrnl_cmd $notebook --config-file $config"
+    journal=$(get_journal)
+    export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
     log "$JRNL"
 }
 
@@ -297,6 +169,14 @@ amend() {
 bypass_wrapper() {
     #"$JRNL" "$@"
     echo "that shit wont work"
+}
+
+check_write_mode() {
+    # if running, abort, if not, mark as rnning
+    touch "$WRITE_MODE_INDICATOR_FILE"
+    WRITE_MODE=$(<$WRITE_MODE_INDICATOR_FILE)
+    export WRITE_MODE
+    export WRITE_MODE_INDICATOR_FILE
 }
 
 config_jrnl() {
@@ -364,7 +244,7 @@ execute_git() {
 }
 
 execute_true_jrnl() {
-    J=$(get_notebook)
+    J=$(get_journal)
     debug "$jrnl" "$J" "$@"
     "$jrnl" "$J" "$@" ; x="$?"
     context selected
@@ -421,8 +301,6 @@ generate_uuid() {
 }
 
 load_template() {
-    WRITE_MODE_INDICATOR_FILE="${FILE[write_mode]}"
-
     if [[ -z "$TEMPLATES" ]]; then err "\$TEMPLATES is NOT defined in $HOME_DIR/.env!"; exit 88; fi;
     template_file="$TEMPLATES/$1"
     echo $template_file
@@ -448,7 +326,7 @@ get_context() {
     fi
 }
 
-get_notebook() {
+get_journal() {
     local context=$(get_context)
     case "$context" in
         none)  echo 'main'; exit 0 ;;
@@ -502,77 +380,27 @@ push_to_remote() {
     exit "$?"
 }
 
-# Loop through the keys of the associative array and print key-value pairs
 reveal_variables() {
-    local yellow="\033[33m"
-    local green="\033[32m"
-    local red="\033[31m"
-    local purple="\033[35m"
-    local cyan="\033[36m"
-    local reset="\033[0m"
-
-    echo -e "--- ARGUMENTS ---"
-    for key in "${!ARG[@]}"; do
-        value="${ARG[$key]}"
-        value="${value%"${value##*[![:space:]]}"}"  # Trim trailing whitespace
-        value="${value#"${value%%[![:space:]]*}"}"  # Trim leading whitespace
-        color="$reset"
-
-        if [[ $value == 'null' ]]; then
-            value=""  # Null value
-        elif [[ -z $value ]]; then
-            value="EMPTY"  # Empty string
-            color=$cyan    # Empty value
-        elif [[ $value == '1' ]]; then
-            color=$green   # True value
-        elif [[ $value == '0' ]]; then
-            color=$red     # False value
-        fi
-
-        printf "${yellow}%-20s${reset} : ${color}%s${reset}\n" "$key" "$value"
-    done
-
-    echo -e "--- ENVIRONMENT ---"
-    for key in "${!ENV[@]}"; do
-        value="${ENV[$key]}"
-        value="${value%"${value##*[![:space:]]}"}"  # Trim trailing whitespace
-        value="${value#"${value%%[![:space:]]*}"}"  # Trim leading whitespace
-        color="$reset"
-
-        if [[ $value == 'null' ]]; then
-            value=""  # Null value
-        elif [[ -z $value ]]; then
-            value="EMPTY"  # Empty string
-            color=$cyan    # Empty value
-        elif [[ $value == '1' ]]; then
-            color=$green   # True value
-        elif [[ $value == '0' ]]; then
-            color=$red     # False value
-        fi
-
-        printf "${yellow}%-20s${reset} : ${color}%s${reset}\n" "$key" "$value"
-    done
-
-    echo -e "--- FILES ---"
-    for key in "${!FILE[@]}"; do
-        value="${FILE[$key]}"
-        value="${value%"${value##*[![:space:]]}"}"  # Trim trailing whitespace
-        value="${value#"${value%%[![:space:]]*}"}"  # Trim leading whitespace
-        color="$reset"
-
-        if [[ $value == 'null' ]]; then
-            value=""  # Null value
-        elif [[ -z $value ]]; then
-            value="EMPTY"  # Empty string
-            color=$cyan    # Empty value
-        elif [[ $value == '1' ]]; then
-            color=$green   # True value
-        elif [[ $value == '0' ]]; then
-            color=$red     # False value
-        fi
-
-        printf "${yellow}%-20s${reset} : ${color}%s${reset}\n" "$key" "$value"
-    done
+    echo "DEBUG=True"
+    echo "For real debug, do jrnl --debug"
+    echo ""
+    echo "AMEND=$AMEND"
+    echo "WRITE_MODE=$WRITE_MODE"
+    echo "WRITE_MODE_INDICATOR_FILE=$WRITE_MODE_INDICATOR_FILE"
+    echo "TRUE_JRNL=$TRUE_JRNL"
+    echo "JRNL_DATA=$JRNL_DATA"
+    echo "TEMPLATES=$TEMPLATES"
+    echo "CONFIG_FILE_PATH=$CONFIG_FILE_PATH"
+    echo "CONTEXT=$CONTEXT"
+    echo "DEFAULT_JOURNAL=$DEFAULT_JOURNAL"
+    echo "SECONDARY_EDITOR=$SECONDARY_EDITOR"
+    echo "CACHE=$CACHE"
+    echo "HOME_DIR=$HOME_DIR"
+    echo "INPUT_ARGS=$INPUT_ARGS"
+    echo "PARSED_ARGS=$PARSED_ARGS"
+    echo "LOG=$LOG"
+    echo "JRNL=$JRNL"
+    echo "OK=$OK"
 }
 
 show_today_jrnl() {
@@ -595,7 +423,7 @@ get_pager() {
 # exit function
 view_entries_in_terminal() {
     context selected
-    J=$(get_notebook)
+    J=$(get_journal)
     length="${1:0:1}"
     limit="$2"
     debug "d = $length"
@@ -613,7 +441,7 @@ view_journal_today() {
 }
 
 view_journal_on_date() {
-    J=$(get_notebook)
+    J=$(get_journal)
     warn "Journal: $J"
     date_args="$*"
     date=$(date -d "$date_args" +"%Y-%m-%d")
@@ -624,7 +452,7 @@ view_journal_on_date() {
 }
 
 view_journal_yesterday() {
-    J=$(get_notebook)
+    J=$(get_journal)
     $JRNL "$J" -on yesterday ; x="$?"
     context selected
     exit "$x"
@@ -634,4 +462,3 @@ warn() { echo -e "\e[33m$@\e[0m" >&2; }
 err()  { echo -e "\e[31m$@\e[0m" >&2; }
 
 main "$@"
-reveal_variables
