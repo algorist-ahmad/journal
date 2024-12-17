@@ -159,7 +159,13 @@ prepare_true_command() {
     if [[ ! -n "$DEFAULT_JOURNAL"  ]]; then echo "NO DEFAULT JOURNAL DEFINED IN .env"; fi
 
     journal=$(get_journal)
+
+    # old version
     export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH"
+
+    # new version
+    # export JRNL="$TRUE_JRNL $journal --config-file $CONFIG_FILE_PATH --format markdown" #doesn't work
+
     log "$JRNL"
 }
 
