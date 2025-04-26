@@ -7,3 +7,28 @@ jrnl-main: ARGS =
 /usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml
 jrnl-main: ARGS = 
 /usr/bin/jrnl main --config-file /home/ahmad/data/journals/jrnl.yaml -on today
+/bin/jrnl mkdir: created directory '/home/ahmad/.cache/jrnl' none --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = 
+/bin/jrnl mkdir: created directory '/home/ahmad/.cache/jrnl' none --config-file /home/ahmad/dotfiles/jrnl/.yml -on today
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = help
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = --help
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = --help
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = --format heatmap
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = trust
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = key
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = compose
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = -contains fdc --edit
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = Lube
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = zeit
+/bin/jrnl main --config-file /home/ahmad/dotfiles/jrnl/.yml
+jrnl-main: ARGS = -w
